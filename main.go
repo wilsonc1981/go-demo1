@@ -20,7 +20,7 @@ func BuildServer() (*http.Server, net.Listener) {
 	fmt.Println("web server running...")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { // 如果很簡單，你可以把實作直接寫進來，不需要額外再寫個function在外面
-		_, _ = w.Write([]byte("index!"))
+		http.FileServer(http.Dir("./app/urls/pages/")).ServeHTTP(w, r)
 	})
 	mux.HandleFunc("/about/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, app.Version)
