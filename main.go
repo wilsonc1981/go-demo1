@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bufio"
+	"context"
 	"fmt"
 	"go-demo1/app"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
-	"sync"
+	"strings"
 	"time"
 )
 
@@ -30,6 +33,7 @@ func BuildServer() (*http.Server, net.Listener) {
 	// http.ListenAndServe(":8080", nil) // 對外網都有效
 	// err := http.ListenAndServe("127.0.0.1:0", mux) // 純本機，所以防火牆不會彈出來 // 因為我們希望獲得動態port的埠號，所以不能靠ListenAndServer，它封裝在裡面，又是私有的所以取不到
 	server := &http.Server{Addr: "127.0.0.1:0", Handler: mux} // port: 0會自動分配
+
 	listener, err := net.Listen("tcp", server.Addr)
 	if err != nil {
 		log.Fatal("web server err:", err)
@@ -40,12 +44,12 @@ func BuildServer() (*http.Server, net.Listener) {
 
 func main() {
 	server, listener := BuildServer()
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	// wg := sync.WaitGroup{}
+	// wg.Add(1)
 	go func() {
-		defer wg.Done()
+		// defer wg.Done()
 		if err := server.Serve(listener); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}()
 	time.Sleep(50 * time.Millisecond) // wait server ready
@@ -55,5 +59,23 @@ func main() {
 			panic(err)
 		}
 	}
-	wg.Wait()
+	// wg.Wait()
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		fmt.Println("請輸入指令:(quit終止程式)")
+		scanner.Scan()
+		input := scanner.Text()
+		if strings.ToLower(input) == "quit" {
+			// 關閉server
+			if err := server.Shutdown(context.Background()); err != nil {
+				panic(err)
+			}
+			log.Println("server已關閉")
+			break
+		}
+	}
+	time.Sleep(10 * time.Second) // 讓您有時間再自己訪問瀏覽頁面，查看server是真的關閉了
+	log.Println("程式中止")
+
 }
